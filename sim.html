@@ -1,0 +1,38 @@
+<!doctype>
+<html>  
+     <head>
+         <script type="text/javascript" src="sim.js"></script>
+         <title>Model Sim</title>
+         <style>
+             #backup td { height:35px; width:35px; border:0px}
+         </style>
+         <script type="application/javascript">  
+var sim = undefined;
+function draw() {  
+             
+    sim = new Simulator({
+        canvas: 'canvas',
+        height: 20,
+        width: 20,
+        communication_distance:2,
+//        default_pop: function(x,y) { return new Population(0,0,0); }
+    });
+    sim.state[5][5].b = 255;
+    sim.state[15][5].g = 255;
+    sim.state[10][15].r = 255;
+    sim.start();
+};
+var int = undefined;
+
+         </script>      
+     </head>  
+     <body onload="draw()">
+         <button onclick="javascript:sim.step(); void(0)">STEP</button>
+         <button onclick="javascript:sim.animate();">START</button>
+         <button onclick="javascript:sim.stop();">STOP</button>
+         <button onclick="javascript:sim.reset();sim.redraw()">RESET</button>
+         
+         <canvas id="canvas" width="400" height="400"></canvas>  
+         <div id="backup"></div>
+     </body>  
+</html>  
