@@ -286,9 +286,6 @@ Simulator.prototype.handle_click = function(e) {
     var size = 100;
     var new_pop = this.opts.default_pop(offX, offY);
     new_pop.size = size;
-    new_pop.ideologies[0].weight = 0.33;
-    new_pop.ideologies[1].weight = 0.33;
-    new_pop.ideologies[2].weight = 0.34;
     this.state.push(new_pop);
 
     this.redraw();
