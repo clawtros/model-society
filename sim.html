@@ -33,8 +33,11 @@ var int = undefined;
     <button onclick="javascript:sim.reset();sim.redraw()">RESET</button>
     <div style="clear:both;display:block"></div>
     <div style="float:right">
-      <input type="range" onchange="javascript:TIMESCALE=1/this.value"
-      max="200" min="1"/>
+      <label>
+        Time Scale (1-200ish)
+        <input type="range" onchange="javascript:TIMESCALE=(this.value >= 1) ? 1/this.value : TIMESCALE"
+             max="200" min="1" default="50"/>
+      </label>
     </div>
     <canvas id="canvas" style="border:2px solid #555" width="400" height="400"></canvas>
     
