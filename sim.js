@@ -24,10 +24,13 @@ var infection_function = function(wt, c, t, a) {
 };
 
 
-var Population = function(r,g,b,opts) {
+var Population = function(x,y,size,r,g,b,opts) {
     this.r = r;
     this.g = g;
     this.b = b;
+    this.x = x;
+    this.y = y;
+    this.size = size;
     this.opts = {
         c: 10.0,
         t: 0.1,
@@ -41,17 +44,16 @@ var Population = function(r,g,b,opts) {
     extend(this.opts, opts);
 };
 Population.prototype.interact_with = function(other) {
-    this.r = infection_function(this.r, this.opts.c, this.opts.t, other.opts.vaccinates.r);
-    this.g = infection_function(this.g, this.opts.c, this.opts.t, other.opts.vaccinates.g);
-    this.b = infection_function(this.b, this.opts.c, this.opts.t, other.opts.vaccinates.b);
-};
+    var dx = this.x-other.x;
+    var dy = this.y-other.y;
 
-
-var World = function(opts) {
-    this.pop_centers = opts['pop_centers'] || [];
-}
-World.prototype.simulate = function(dt) {
-    
+    var distance = Math.sqrt(dx*dx + dy*dy);
+    var distance = 1;
+//    console.log(this.r, infection_function(this.r, this.opts.c, this.opts.t*distance, other.opts.vaccinates.r));
+    this.r = infection_function(this.r, this.opts.c, this.opts.t*distance, other.opts.vaccinates.r);
+    this.g = infection_function(this.g, this.opts.c, this.opts.t*distance, other.opts.vaccinates.g);
+    this.b = infection_function(this.b, this.opts.c, this.opts.t*distance, other.opts.vaccinates.b);
+    console.log(this.r, this.g, this.b, this.size, this.x, this.y);
 };
  
 
@@ -61,11 +63,12 @@ var Simulator = function(opts) {
         height: 100,
         canvas: undefined,
         speed:100,
+        num_pops: 10,
         communication_distance:1,
-        default_pop: function(x,y) { return new Population(Math.floor(Math.random() * 255), Math.floor(Math.random() * 255), Math.floor(Math.random() * 255)) }
+        default_pop: function(x,y) { return new Population(x,y,Math.random() * 100,Math.floor(Math.random() * 255), Math.floor(Math.random() * 255), Math.floor(Math.random() * 255)) }
     }
     extend(this.opts, opts);
-    this.create_table(this.opts.width, this.opts.height);
+//    this.create_table(this.opts.width, this.opts.height);
 
     this.canvas = document.getElementById(this.opts.canvas);
     this.canvas.width = this.opts.width;
@@ -74,6 +77,7 @@ var Simulator = function(opts) {
     this.reset();
     this.to_stop = false;
 };
+
 Simulator.prototype.animate = function() {
     this.step();
     var simulator = this;
@@ -83,9 +87,11 @@ Simulator.prototype.animate = function() {
         this.to_stop = false;
     }
 }
+
 Simulator.prototype.stop = function() {
     this.to_stop = true;
 }
+
 Simulator.prototype.create_table = function(w,h) {
     this.backup = document.getElementById('backup');
     this.table = this.backup.appendChild(document.createElement('table'));
@@ -97,57 +103,41 @@ Simulator.prototype.create_table = function(w,h) {
         }
     }
 }
-Simulator.prototype.step = function() {
-    for (var y=0; y < this.opts.height; y++) {
-        for (var x=0; x < this.opts.width; x++) {
-            var ns = this.neighbors(x,y,this.opts.communication_distance)
-            var here = this.state[x][y];
-            for (var iy in ns) {
-                var row = ns[iy];
 
-                for (var ix in row) {
-                    var there = row[ix];
-                    here.interact_with(there);
-                }
-            }
+Simulator.prototype.step = function() {
+    for (var s_pop_id in this.state) {
+        var sp = this.state[s_pop_id];
+        for (var t_pop_id in this.state) {
+            sp.interact_with(this.state[t_pop_id]);
         }
     }
     this.redraw();
 }
+
 Simulator.prototype.reset = function() {
     this.state = [];
-    for (var y=0; y < this.opts.height; y++) {
-        var row = [];
-        for (var x=0; x < this.opts.width; x++) {
-            row.push(this.opts.default_pop(x,y));
-        }
-        this.state.push(row);
+    for (var p = 0; p < this.opts.num_pops; p++) {
+        this.state.push(this.opts.default_pop(Math.random() * this.opts.width, Math.random()*this.opts.height));
     }
 };
-Simulator.prototype.neighbors = function(x,y,d) {
-    var result = [];
-    for (var y = bound(y-d, 0, this.opts.height); y < bound(y+d, 0, this.opts.height); y++) {
-        var row = []
-        for (var x = bound(x-d, 0, this.opts.width); x < bound(x+d, 0, this.opts.width); x++) {
-            row.push(this.state[x][y]);
-        }
-        result.push(row)
-    }
-    return result;
-};
+
+var fillCircle = function (ctx, cx, cy, r) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2, true); 
+    ctx.closePath();
+    ctx.fill();
+}
+
 Simulator.prototype.redraw = function() {
-    var id = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    for (var y=0; y < this.opts.height; y++) {
-        for (var x=0; x < this.opts.width; x++) {
-            var i = this.state[x][y];
-            setPixel(id, x, y, i.r, i.g, i.b);
-            var td = document.getElementById("td_" + x + "_" + y);
-            td.style.background = "rgb("+Math.round(i.r)+","+Math.round(i.g)+","+Math.round(i.b)+")";
-        }
+    this.ctx.fillStyle = "white";
+    this.ctx.clearRect(0,0,this.opts.width,this.opts.height);
+    for (var pop_id in this.state) {
+        var p = this.state[pop_id];
+        this.ctx.fillStyle = "rgba("+p.r+","+p.g+", "+p.b+",0.5)";
+        fillCircle(this.ctx, p.x, p.y, p.size, p.r, p.g, p.b);
     }
-    this.ctx.putImageData(id, 0, 0);
-    return id;
 };
+
 Simulator.prototype.start = function() {
     this.redraw();
 };
