@@ -7,15 +7,14 @@
              #backup td { height:35px; width:35px; border:0px}
          </style>
          <script type="application/javascript">  
+
 var sim = undefined;
-function draw() {  
-             
+function init() {
     sim = new Simulator({
         canvas: 'canvas',
-        height: 400,
-        width: 400,
-        communication_distance:2,
-//        default_pop: function(x,y) { return new Population(0,0,0); }
+        height: 500,
+        width: 500,
+        num_pops: 25,
     });
     sim.start();
 };
@@ -23,7 +22,7 @@ var int = undefined;
 
          </script>      
      </head>  
-     <body onload="draw()">
+     <body onload="init()">
          <button onclick="javascript:sim.step(); void(0)">STEP</button>
          <button onclick="javascript:sim.animate();">START</button>
          <button onclick="javascript:sim.stop();">STOP</button>

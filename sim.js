@@ -4,7 +4,6 @@ var extend = function(a,b) {
     }
 };
 
-
 var bound = function(n, low, high) {
     return Math.max(low, Math.min(high, n));
 };
@@ -20,42 +19,101 @@ var setPixel = function(imageData, x, y, r, g, b) {
 
 
 var infection_function = function(wt, c, t, a) {
-    return bound(wt + (wt * (c * t * ((255.0-wt) / 255.0) )+a/255)/255, 0, 255);
+    return wt * (c * t * (1-wt)+a);
 };
 
 
-var Population = function(x,y,size,r,g,b,opts) {
-    this.r = r;
-    this.g = g;
-    this.b = b;
+var Color = function(r,g,b,a) {
+    this.r=r;
+    this.g=g;
+    this.b=b;
+    this.a=a;
+}
+Color.prototype.average = function(c) {
+    return new Color((this.r+c.r) / 2.,
+                     (this.g+c.g) / 2.,
+                     (this.b+c.b) / 2.,
+                     (this.a+c.a) / 2.);
+}
+
+Color.prototype.as_rgba = function() {
+    return "rgba("+Math.round(this.r)+","+Math.round(this.g)+","+Math.round(this.b)+",0.8)";//+this.a+")";
+}
+
+Color.prototype.mul = function(amount) {
+    return new Color(this.r*amount, this.g*amount, this.b*amount);
+}
+
+
+var Ideology = function(opts) {
+    this.opts = {
+        color: new Color(0,0,0,1),
+        c: 10.0,
+        t: 1.1,
+        affinity: 0,
+    }
+    extend(this.opts, opts);
+}
+
+
+var Population = function(sim, x, y, size, ideologies, opts) {
+    this.sim = sim;
     this.x = x;
     this.y = y;
     this.size = size;
+    this.ideologies = ideologies;
+  
     this.opts = {
-        c: 10.0,
-        t: 0.1,
-        affinity: 0,
-        vaccinates: {
-            r:255-g,
-            b:50,
-            g:255-r
-        }
+        error: size/10
     }
     extend(this.opts, opts);
 };
-Population.prototype.interact_with = function(other) {
-    var dx = this.x-other.x;
-    var dy = this.y-other.y;
 
-    var distance = Math.sqrt(dx*dx + dy*dy);
-    var distance = 1;
-//    console.log(this.r, infection_function(this.r, this.opts.c, this.opts.t*distance, other.opts.vaccinates.r));
-    this.r = infection_function(this.r, this.opts.c, this.opts.t*distance, other.opts.vaccinates.r);
-    this.g = infection_function(this.g, this.opts.c, this.opts.t*distance, other.opts.vaccinates.g);
-    this.b = infection_function(this.b, this.opts.c, this.opts.t*distance, other.opts.vaccinates.b);
-    console.log(this.r, this.g, this.b, this.size, this.x, this.y);
+Population.prototype.rebalance_weights = function() {
+    var over = 0;
+    for (var i in this.ideologies) {
+        over += this.ideologies[i].weight;
+    }
+    for (var i in this.ideologies) {
+        this.ideologies[i].weight = this.ideologies[i].weight / over;
+    }
+}
+
+Population.prototype.interact_with = function(other, dt) {
+    if (this != other) {
+        var dx = this.x-other.x;
+        var dy = this.y-other.y;
+        var distance = Math.sqrt(dx*dx + dy*dy) / this.max_dist;
+        for (var i in this.ideologies) {
+            var this_weight = this.ideologies[i].weight;
+            var other_weight = other.ideologies[i].weight;
+            var weight_delta = infection_function(
+                this_weight, 
+                other.ideologies[i].ideology.opts.c, 
+                other.ideologies[i].ideology.opts.t*(distance), 
+                other.ideologies[i].ideology.opts.vaccinates[i]);
+            this.ideologies[i].weight = this_weight + weight_delta/dt;
+            this.rebalance_weights();
+        }
+    }
 };
- 
+
+Population.prototype.simulate = function(dt) {
+    this.max_dist = Math.sqrt(sim.opts.height*sim.opts.height + sim.opts.width*sim.opts.width);
+    
+    for (var t_pop_id in sim.state) {
+        this.interact_with(sim.state[t_pop_id], dt);
+    }
+};
+
+Population.prototype.color = function() {
+    var color=this.ideologies[0].ideology.opts.color.mul(this.ideologies[0].weight);
+    for (var i = 1;i < this.ideologies.length; i++) {
+        color = color.average(this.ideologies[i].ideology.opts.color.mul(this.ideologies[i].weight));
+    }
+
+    return color;
+};
 
 var Simulator = function(opts) {
     this.opts = {
@@ -63,12 +121,44 @@ var Simulator = function(opts) {
         height: 100,
         canvas: undefined,
         speed:100,
-        num_pops: 10,
+        num_pops: 25,
         communication_distance:1,
-        default_pop: function(x,y) { return new Population(x,y,Math.random() * 100,Math.floor(Math.random() * 255), Math.floor(Math.random() * 255), Math.floor(Math.random() * 255)) }
-    }
+        default_pop: function(x,y) { 
+            var r = Math.random();
+            var r1 = 1 - r * Math.random();
+            var r2 = 1 - r - r1;
+            return new Population(this, x, y, 
+                                  Math.random() * 100,
+                                  [
+                                      {
+                                          'ideology':new Ideology({
+                                              color: new Color(255,0,0,0.75),
+                                              c : 1.0,
+                                              vaccinates: [0.0, 0.1, 0.2]
+                                          }),
+                                          'weight':r
+                                      },
+                                      {
+                                          'ideology':new Ideology({
+                                              color: new Color(0,255,0,0.75),
+                                              c: 1.0,
+                                              vaccinates: [0.3, 0.0, 0.4]
+                                          }),
+                                          'weight':r1
+                                      },
+                                      {
+                                          'ideology':new Ideology({
+                                              color: new Color(0,0,255,0.75),
+                                              c: 1.0,
+                                              vaccinates: [0.1, 0.1, 0.1]
+                                          }),
+                                          'weight':r2
+                                      }
+                                  ]
+                                 );
+        }
+    };
     extend(this.opts, opts);
-//    this.create_table(this.opts.width, this.opts.height);
 
     this.canvas = document.getElementById(this.opts.canvas);
     this.canvas.width = this.opts.width;
@@ -105,11 +195,11 @@ Simulator.prototype.create_table = function(w,h) {
 }
 
 Simulator.prototype.step = function() {
+    var dt = this.opts.speed;
     for (var s_pop_id in this.state) {
+        
         var sp = this.state[s_pop_id];
-        for (var t_pop_id in this.state) {
-            sp.interact_with(this.state[t_pop_id]);
-        }
+        sp.simulate(dt)
     }
     this.redraw();
 }
@@ -129,11 +219,10 @@ var fillCircle = function (ctx, cx, cy, r) {
 }
 
 Simulator.prototype.redraw = function() {
-    this.ctx.fillStyle = "white";
     this.ctx.clearRect(0,0,this.opts.width,this.opts.height);
     for (var pop_id in this.state) {
         var p = this.state[pop_id];
-        this.ctx.fillStyle = "rgba("+p.r+","+p.g+", "+p.b+",0.5)";
+        this.ctx.fillStyle = p.color().as_rgba();
         fillCircle(this.ctx, p.x, p.y, p.size, p.r, p.g, p.b);
     }
 };
