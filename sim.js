@@ -264,6 +264,7 @@ Simulator.prototype.background = function() {
 
 Simulator.prototype.redraw = function() {
     this.ctx.clearRect(0,0,this.opts.width,this.opts.height);
+
     for (var pop_id in this.state) {
         var p = this.state[pop_id];
         this.ctx.fillStyle = p.color().as_rgba();
@@ -276,8 +277,13 @@ Simulator.prototype.start = function() {
 };
 
 Simulator.prototype.handle_click = function(e) {
+    console.log('click');
+    console.log(e);
+    var offX = e.pageX - e.target.offsetLeft;
+    var offY = e.pageY - e.target.offsetTop;
+
     var size = 100;
-    var new_pop = this.opts.default_pop(e.offsetX, e.offsetY);
+    var new_pop = this.opts.default_pop(offX, offY);
     new_pop.size = size;
     this.state.push(new_pop);
 

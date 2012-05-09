@@ -17,9 +17,10 @@ function init() {
         width: 800,
     });
     sim.start();
-    document.getElementById('canvas').onclick = function(e) {
+    document.getElementById('canvas').addEventListener('click', function(e) {
         sim.handle_click(e);
-    }
+        return false;
+    });
 };
 var int = undefined;
 
