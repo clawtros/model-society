@@ -110,7 +110,8 @@ Population.prototype.interact_with = function(other, dt) {
 
         var dx = this.x-other.x;
         var dy = this.y-other.y;
-        var distance = (Math.sqrt(dx*dx + dy*dy)) / this.max_dist;
+        var d1 = (Math.sqrt(dx*dx + dy*dy));
+        var distance = d1 / this.max_dist;
         var comp = this.compatibility(other);
         var e_comp = this.compatibility(other, this.error);
 
@@ -124,6 +125,11 @@ Population.prototype.interact_with = function(other, dt) {
         if (comp*(2/distance) < 0.10) {
             this.x -= (dx/20)*TIMESCALE;
             this.y -= (dy/20)*TIMESCALE;
+        }
+        
+        if (d1 < (this.size+other.size)/2. ) {
+            this.x += (dx/40)*TIMESCALE;
+            this.y += (dy/40)*TIMESCALE;            
         }
 
         for (var i in this.ideologies) {
@@ -278,6 +284,7 @@ Simulator.prototype.start = function() {
     this.redraw();
 };
 
+MAX_POPS=50;
 Simulator.prototype.handle_click = function(e) {
 
     var offX = e.pageX - e.target.offsetLeft;
@@ -287,6 +294,8 @@ Simulator.prototype.handle_click = function(e) {
     var new_pop = this.opts.default_pop(offX, offY);
     new_pop.size = size;
     this.state.push(new_pop);
-
+    if (this.state.length > MAX_POPS) {
+        this.state.shift();
+    }
     this.redraw();
 };
