@@ -1,12 +1,13 @@
 <!doctype>
 <html>  
-     <head>
-         <script type="text/javascript" src="sim.js"></script>
-         <title>Model Sim</title>
-         <style>
-             #backup td { height:35px; width:35px; border:0px}
-         </style>
-         <script type="application/javascript">  
+  <head>
+    <script type="text/javascript" src="perlin-noise-simplex.js"></script>
+    <script type="text/javascript" src="sim.js"></script>
+    <title>Model Sim</title>
+    <style>
+      #backup td { height:35px; width:35px; border:0px}
+    </style>
+    <script type="application/javascript">  
 
 var sim = undefined;
 function init() {
@@ -14,21 +15,23 @@ function init() {
         canvas: 'canvas',
         height: 500,
         width: 800,
-        num_pops: 25,
     });
     sim.start();
+    document.getElementById('canvas').onclick = function(e) {
+        sim.handle_click(e);
+    }
 };
 var int = undefined;
 
-         </script>      
-     </head>  
-     <body onload="init()">
-         <button onclick="javascript:sim.step(); void(0)">STEP</button>
-         <button onclick="javascript:sim.animate();">START</button>
-         <button onclick="javascript:sim.stop();">STOP</button>
-         <button onclick="javascript:sim.reset();sim.redraw()">RESET</button>
-         <div style="clear:both;display:block"></div>
-         <canvas id="canvas" style="border:2px solid #555" width="400" height="400"></canvas>  
-         <div id="backup"></div>
-     </body>  
+    </script>      
+  </head>  
+  <body onload="init()">
+    <button onclick="javascript:sim.step(); void(0)">STEP</button>
+    <button onclick="javascript:sim.animate();">START</button>
+    <button onclick="javascript:sim.stop();">STOP</button>
+    <button onclick="javascript:sim.reset();sim.redraw()">RESET</button>
+    <div style="clear:both;display:block"></div>
+    <canvas id="canvas" style="border:2px solid #555" width="400" height="400"></canvas>  
+    <div id="backup"></div>
+  </body>  
 </html>  

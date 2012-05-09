@@ -1,3 +1,5 @@
+var TIMESCALE = 1/50.;
+
 var extend = function(a,b) {
     for (k in b) {
         a[k] = b[k];
@@ -108,8 +110,8 @@ Population.prototype.interact_with = function(other, dt) {
         var dy = this.y-other.y;
         var distance = (Math.sqrt(dx*dx + dy*dy)) / this.max_dist;
 
-        if (this.compatibility(other) > (this.opts.error * (Math.random() + 0.5)) * (distance)) {
-            var exodus = 0.05*Math.random()*this.size;
+        if (this.compatibility(other) > (this.opts.error * (Math.random() + 0.5))*(distance/2)) {
+            var exodus = 0.1*Math.random()*this.size*TIMESCALE;
             this.size -= exodus;
             other.size += exodus;
         }
@@ -118,12 +120,13 @@ Population.prototype.interact_with = function(other, dt) {
         for (var i in this.ideologies) {
             var this_weight = this.ideologies[i].weight;
             var other_weight = other.ideologies[i].weight;
+            var w_delta = Math.abs(this_weight - other_weight) * distance;
             var weight_delta = infection_function(
                 this_weight, 
-                other.ideologies[i].ideology.opts.c,
-                other.ideologies[i].ideology.opts.t*(1 - distance), 
-                other.ideologies[i].weight * other.ideologies[i].ideology.opts.vaccinates[i]);
-            this.ideologies[i].weight = this_weight + weight_delta/dt;
+                w_delta * other.ideologies[i].ideology.opts.c,
+                w_delta * other.ideologies[i].ideology.opts.t*(1 - distance), 
+                this_weight * other.ideologies[i].ideology.opts.vaccinates[i]);
+            this.ideologies[i].weight = this_weight + (weight_delta/dt)*TIMESCALE;
             this.rebalance_weights();
         }
     }
@@ -151,8 +154,8 @@ var Simulator = function(opts) {
         width: 100,
         height: 100,
         canvas: undefined,
-        speed:100,
-        num_pops: 25,
+        speed:33,
+        num_pops: 50,
         communication_distance:1,
         default_pop: function(x,y) { 
             var r = Math.random();
@@ -165,7 +168,7 @@ var Simulator = function(opts) {
                                           'ideology':new Ideology({
                                               color: new Color(255,0,0,0.75),
                                               c : 1.0,
-                                              vaccinates: [0.0, 0.1, 0.2]
+                                              vaccinates: [0.0, 0.1, 0.9]
                                           }),
                                           'weight':r
                                       },
@@ -173,7 +176,7 @@ var Simulator = function(opts) {
                                           'ideology':new Ideology({
                                               color: new Color(0,255,0,0.75),
                                               c: 1.0,
-                                              vaccinates: [0.3, 0.0, 0.4]
+                                              vaccinates: [0.9, 0.0, 0.1]
                                           }),
                                           'weight':r1
                                       },
@@ -181,7 +184,7 @@ var Simulator = function(opts) {
                                           'ideology':new Ideology({
                                               color: new Color(0,0,255,0.75),
                                               c: 1.0,
-                                              vaccinates: [0.1, 0.1, 0.1]
+                                              vaccinates: [0.1, 0.9, 0.0]
                                           }),
                                           'weight':r2
                                       }
@@ -190,27 +193,25 @@ var Simulator = function(opts) {
         }
     };
     extend(this.opts, opts);
-
+    this.interval = undefined;
     this.canvas = document.getElementById(this.opts.canvas);
     this.canvas.width = this.opts.width;
     this.canvas.height = this.opts.height;
     this.ctx = this.canvas.getContext('2d');
     this.reset();
-    this.to_stop = false;
 };
 
 Simulator.prototype.animate = function() {
-    this.step();
-    var simulator = this;
-    if (!this.to_stop) { 
-        setTimeout(function() { simulator.animate(); }, simulator.opts.speed);
-    } else {
-        this.to_stop = false;
+    if (!this.interval) {
+        var simulator = this;
+        
+        this.interval = setInterval(function() { simulator.step() }, simulator.opts.speed);
     }
 }
 
 Simulator.prototype.stop = function() {
-    this.to_stop = true;
+    clearInterval(this.interval);
+    this.interval = undefined;
 }
 
 Simulator.prototype.create_table = function(w,h) {
@@ -249,6 +250,18 @@ var fillCircle = function (ctx, cx, cy, r) {
     ctx.fill();
 }
 
+
+
+Simulator.prototype.background = function() {
+    var gridsize = this.opts.width / 20;
+
+    for (var j = 0; j < this.opts.width; j += gridsize) {
+        for (var i = 0; i < this.opts.width; i += gridsize) {
+
+        }
+    }
+}
+
 Simulator.prototype.redraw = function() {
     this.ctx.clearRect(0,0,this.opts.width,this.opts.height);
     for (var pop_id in this.state) {
@@ -259,5 +272,14 @@ Simulator.prototype.redraw = function() {
 };
 
 Simulator.prototype.start = function() {
+    this.redraw();
+};
+
+Simulator.prototype.handle_click = function(e) {
+    var size = 100;
+    var new_pop = this.opts.default_pop(e.offsetX, e.offsetY);
+    new_pop.size = size;
+    this.state.push(new_pop);
+
     this.redraw();
 };
