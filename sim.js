@@ -37,7 +37,7 @@ Color.prototype.average = function(c) {
 }
 
 Color.prototype.as_rgba = function() {
-    return "rgba("+Math.round(this.r)+","+Math.round(this.g)+","+Math.round(this.b)+",0.8)";//+this.a+")";
+    return "rgba("+Math.round(this.r)+","+Math.round(this.g)+","+Math.round(this.b)+",0.5)";//+this.a+")";
 }
 
 Color.prototype.mul = function(amount) {
@@ -108,7 +108,7 @@ Population.prototype.interact_with = function(other, dt) {
         var dy = this.y-other.y;
         var distance = (Math.sqrt(dx*dx + dy*dy)) / this.max_dist;
 
-        if (this.compatibility(other) > (this.opts.error * (Math.random() + 0.5)) * (1-distance)) {
+        if (this.compatibility(other) > (this.opts.error * (Math.random() + 0.5)) * (distance)) {
             var exodus = 0.05*Math.random()*this.size;
             this.size -= exodus;
             other.size += exodus;
