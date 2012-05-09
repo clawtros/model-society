@@ -122,7 +122,7 @@ Population.prototype.interact_with = function(other, dt) {
                 this_weight, 
                 other.ideologies[i].ideology.opts.c,
                 other.ideologies[i].ideology.opts.t*(1 - distance), 
-                other.ideologies[i].ideology.opts.vaccinates[i]);
+                other.ideologies[i].weight * other.ideologies[i].ideology.opts.vaccinates[i]);
             this.ideologies[i].weight = this_weight + weight_delta/dt;
             this.rebalance_weights();
         }
