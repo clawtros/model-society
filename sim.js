@@ -54,7 +54,14 @@ var Ideology = function(opts) {
     }
     extend(this.opts, opts);
 }
-
+Ideology.prototype.c_distance = function (other, dist) {
+    var tc = this.opts.color;
+    var oc = other.opts.color;
+    return Math.sqrt((tc.r-oc.r)*(tc.r-oc.r)+
+                     (tc.g-oc.g)*(tc.g-oc.g)+
+                     (tc.b-oc.b)*(tc.b-oc.b)
+                    );
+};
 
 var Population = function(sim, x, y, size, ideologies, opts) {
     this.sim = sim;
@@ -64,9 +71,24 @@ var Population = function(sim, x, y, size, ideologies, opts) {
     this.ideologies = ideologies;
   
     this.opts = {
-        error: size/10
+        error: size/10.
     }
     extend(this.opts, opts);
+};
+
+Population.prototype.compatibility = function(other) {
+    var d = [];
+    var sqrsum = 0;
+
+    for (var i in this.ideologies) {
+        d[i] = this.ideologies[i].weight - other.ideologies[i].weight;
+    }
+    
+    for (var i in this.ideologies) {
+        sqrsum = sqrsum + d[i] * d[i];
+    }
+
+    return Math.sqrt(sqrsum);
 };
 
 Population.prototype.rebalance_weights = function() {
@@ -81,16 +103,25 @@ Population.prototype.rebalance_weights = function() {
 
 Population.prototype.interact_with = function(other, dt) {
     if (this != other) {
+
         var dx = this.x-other.x;
         var dy = this.y-other.y;
-        var distance = Math.sqrt(dx*dx + dy*dy) / this.max_dist;
+        var distance = (Math.sqrt(dx*dx + dy*dy) - this.size) / this.max_dist;
+
+        if (this.compatibility(other) > this.opts.error * (Math.random() + 0.5 )) {
+            var exodus = 0.05*Math.random()*this.size;
+            this.size -= exodus;
+            other.size += exodus;
+        }
+
+
         for (var i in this.ideologies) {
             var this_weight = this.ideologies[i].weight;
             var other_weight = other.ideologies[i].weight;
             var weight_delta = infection_function(
                 this_weight, 
                 other.ideologies[i].ideology.opts.c, 
-                other.ideologies[i].ideology.opts.t*(distance), 
+                other.ideologies[i].ideology.opts.t*(1/distance), 
                 other.ideologies[i].ideology.opts.vaccinates[i]);
             this.ideologies[i].weight = this_weight + weight_delta/dt;
             this.rebalance_weights();
