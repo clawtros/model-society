@@ -121,9 +121,9 @@ Population.prototype.interact_with = function(other, dt) {
 
         }
 
-        if (comp*(1/distance) < 0.10) {
-            this.x -= (dx/10)*TIMESCALE;
-            this.y -= (dy/10)*TIMESCALE;
+        if (comp*(2/distance) < 0.10) {
+            this.x -= (dx/20)*TIMESCALE;
+            this.y -= (dy/20)*TIMESCALE;
         }
 
         for (var i in this.ideologies) {
@@ -286,9 +286,9 @@ Simulator.prototype.handle_click = function(e) {
     var size = 100;
     var new_pop = this.opts.default_pop(offX, offY);
     new_pop.size = size;
-    new_pop.ideologies[0].weight = 1.;
-    new_pop.ideologies[1].weight = 0.;
-    new_pop.ideologies[2].weight = 0.;
+    new_pop.ideologies[0].weight = 0.33;
+    new_pop.ideologies[1].weight = 0.33;
+    new_pop.ideologies[2].weight = 0.34;
     this.state.push(new_pop);
 
     this.redraw();
