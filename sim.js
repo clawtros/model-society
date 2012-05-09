@@ -110,11 +110,17 @@ Population.prototype.interact_with = function(other, dt) {
         var dx = this.x-other.x;
         var dy = this.y-other.y;
         var distance = (Math.sqrt(dx*dx + dy*dy)) / this.max_dist;
+        var comp = this.compatibility(other);
 
-        if (this.compatibility(other) > (this.opts.error)*(distance/2)) {
+        if (comp > (this.opts.error)*(distance/2)) {
             var exodus = 0.1*Math.random()*this.size*TIMESCALE;
             this.size -= exodus;
             other.size += exodus;
+        }
+
+        if (comp*(1/distance) < 0.05) {
+            this.x -= (dx/10)*TIMESCALE;
+            this.y -= (dy/10)*TIMESCALE;
         }
 
 
