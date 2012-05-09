@@ -32,7 +32,12 @@ var int = undefined;
     <button onclick="javascript:sim.stop();">STOP</button>
     <button onclick="javascript:sim.reset();sim.redraw()">RESET</button>
     <div style="clear:both;display:block"></div>
-    <canvas id="canvas" style="border:2px solid #555" width="400" height="400"></canvas>  
+    <div style="float:right">
+      <input type="range" onchange="javascript:TIMESCALE=1/this.value"
+      max="200" min="1"/>
+    </div>
+    <canvas id="canvas" style="border:2px solid #555" width="400" height="400"></canvas>
+    
     <div id="backup"></div>
   </body>  
 </html>  

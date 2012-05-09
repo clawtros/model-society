@@ -74,17 +74,18 @@ var Population = function(sim, x, y, size, ideologies, opts) {
     this.ideologies = ideologies;
   
     this.opts = {
-        error: size/10.
+        error: size/17.
     }
     extend(this.opts, opts);
 };
 
-Population.prototype.compatibility = function(other) {
+Population.prototype.compatibility = function(other, error) {
+    
     var d = [];
     var sqrsum = 0;
 
     for (var i in this.ideologies) {
-        d[i] = this.ideologies[i].weight - other.ideologies[i].weight;
+        d[i] = (this.ideologies[i].weight - other.ideologies[i].weight) * (error ? (Math.random() * error) + 0.5 : 1 );
     }
     
     for (var i in this.ideologies) {
@@ -111,18 +112,19 @@ Population.prototype.interact_with = function(other, dt) {
         var dy = this.y-other.y;
         var distance = (Math.sqrt(dx*dx + dy*dy)) / this.max_dist;
         var comp = this.compatibility(other);
+        var e_comp = this.compatibility(other, this.error);
 
         if (comp > (this.opts.error)*(distance/2)) {
             var exodus = 0.1*Math.random()*this.size*TIMESCALE;
             this.size -= exodus;
             other.size += exodus;
+
         }
 
-        if (comp*(1/distance) < 0.05) {
+        if (comp*(1/distance) < 0.10) {
             this.x -= (dx/10)*TIMESCALE;
             this.y -= (dy/10)*TIMESCALE;
         }
-
 
         for (var i in this.ideologies) {
             var this_weight = this.ideologies[i].weight;
@@ -176,7 +178,7 @@ var Simulator = function(opts) {
                                           'ideology':new Ideology({
                                               color: new Color(255,0,0,0.75),
                                               c : 1.0,
-                                              vaccinates: [0.0, 0.1, 0.9]
+                                              vaccinates: [0.0, 1.0, 0.0]
                                           }),
                                           'weight':r
                                       },
@@ -184,7 +186,7 @@ var Simulator = function(opts) {
                                           'ideology':new Ideology({
                                               color: new Color(0,255,0,0.75),
                                               c: 1.0,
-                                              vaccinates: [0.9, 0.0, 0.1]
+                                              vaccinates: [1.0, 0.0, 0.0]
                                           }),
                                           'weight':r1
                                       },
@@ -192,7 +194,7 @@ var Simulator = function(opts) {
                                           'ideology':new Ideology({
                                               color: new Color(0,0,255,0.75),
                                               c: 1.0,
-                                              vaccinates: [0.1, 0.9, 0.0]
+                                              vaccinates: [0.5, 0.5, 0.0]
                                           }),
                                           'weight':r2
                                       }
@@ -265,7 +267,6 @@ Simulator.prototype.background = function() {
 
 Simulator.prototype.redraw = function() {
     this.ctx.clearRect(0,0,this.opts.width,this.opts.height);
-
     for (var pop_id in this.state) {
         var p = this.state[pop_id];
         this.ctx.fillStyle = p.color().as_rgba();
@@ -285,6 +286,9 @@ Simulator.prototype.handle_click = function(e) {
     var size = 100;
     var new_pop = this.opts.default_pop(offX, offY);
     new_pop.size = size;
+    new_pop.ideologies[0].weight = 1.;
+    new_pop.ideologies[1].weight = 0.;
+    new_pop.ideologies[2].weight = 0.;
     this.state.push(new_pop);
 
     this.redraw();
