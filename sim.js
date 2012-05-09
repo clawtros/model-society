@@ -277,8 +277,7 @@ Simulator.prototype.start = function() {
 };
 
 Simulator.prototype.handle_click = function(e) {
-    console.log('click');
-    console.log(e);
+
     var offX = e.pageX - e.target.offsetLeft;
     var offY = e.pageY - e.target.offsetTop;
 
