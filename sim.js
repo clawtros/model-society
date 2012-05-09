@@ -1,5 +1,12 @@
 var TIMESCALE = 1/50.;
 
+var fillCircle = function (ctx, cx, cy, r) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2, true); 
+    ctx.closePath();
+    ctx.fill();
+}
+
 var extend = function(a,b) {
     for (k in b) {
         a[k] = b[k];
@@ -31,6 +38,7 @@ var Color = function(r,g,b,a) {
     this.b=b;
     this.a=a;
 }
+
 Color.prototype.average = function(c) {
     return new Color((this.r+c.r) / 2.,
                      (this.g+c.g) / 2.,
@@ -56,14 +64,7 @@ var Ideology = function(opts) {
     }
     extend(this.opts, opts);
 }
-Ideology.prototype.c_distance = function (other, dist) {
-    var tc = this.opts.color;
-    var oc = other.opts.color;
-    return Math.sqrt((tc.r-oc.r)*(tc.r-oc.r)+
-                     (tc.g-oc.g)*(tc.g-oc.g)+
-                     (tc.b-oc.b)*(tc.b-oc.b)
-                    );
-};
+
 
 var Population = function(sim, x, y, size, ideologies, opts) {
     this.sim = sim;
@@ -110,7 +111,7 @@ Population.prototype.interact_with = function(other, dt) {
         var dy = this.y-other.y;
         var distance = (Math.sqrt(dx*dx + dy*dy)) / this.max_dist;
 
-        if (this.compatibility(other) > (this.opts.error * (Math.random() + 0.5))*(distance/2)) {
+        if (this.compatibility(other) > (this.opts.error)*(distance/2)) {
             var exodus = 0.1*Math.random()*this.size*TIMESCALE;
             this.size -= exodus;
             other.size += exodus;
@@ -127,8 +128,9 @@ Population.prototype.interact_with = function(other, dt) {
                 w_delta * other.ideologies[i].ideology.opts.t*(1 - distance), 
                 this_weight * other.ideologies[i].ideology.opts.vaccinates[i]);
             this.ideologies[i].weight = this_weight + (weight_delta/dt)*TIMESCALE;
-            this.rebalance_weights();
+
         }
+        this.rebalance_weights();
     }
 };
 
@@ -242,13 +244,6 @@ Simulator.prototype.reset = function() {
         this.state.push(this.opts.default_pop(Math.random() * this.opts.width, Math.random()*this.opts.height));
     }
 };
-
-var fillCircle = function (ctx, cx, cy, r) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI*2, true); 
-    ctx.closePath();
-    ctx.fill();
-}
 
 
 
