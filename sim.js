@@ -59,8 +59,8 @@ Color.prototype.mul = function(amount) {
 var Ideology = function(opts) {
     this.opts = {
         color: new Color(0,0,0,1),
-        c: 1.3,
-        t: 1.3,
+        c: 1.0,
+        t: 1.0,
         affinity: 0,
     }
     extend(this.opts, opts);
@@ -123,9 +123,9 @@ Population.prototype.interact_with = function(other, dt) {
 
         }
 
-        if (comp*(2/distance) < 0.10*sim.attraction) {
-            this.x -= (dx/20)*TIMESCALE;
-            this.y -= (dy/20)*TIMESCALE;
+        if (comp*(1/distance) < 0.10) {
+            this.x -= (dx*sim.attraction/20)*TIMESCALE;
+            this.y -= (dy*sim.attraction/20)*TIMESCALE;
         }
         
         if (d1 < (this.size+other.size)*sim.territorialism/2.) {
@@ -139,8 +139,8 @@ Population.prototype.interact_with = function(other, dt) {
             var w_delta = Math.abs(this_weight - other_weight) * distance;
             var weight_delta = infection_function(
                 this_weight, 
-                other.ideologies[i].ideology.opts.c*(4*(1/distance)) * sim.communicability,
-                other.ideologies[i].ideology.opts.t * sim.transmissibility, 
+                0.1*other.ideologies[i].ideology.opts.c*(1/distance)* sim.communicability,
+                0.1*other.ideologies[i].ideology.opts.t * sim.transmissibility, 
                 other.ideologies[i].ideology.opts.vaccinates[i]);
             this.ideologies[i].weight = this_weight + (weight_delta/dt)*TIMESCALE;
         }
