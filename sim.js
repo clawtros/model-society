@@ -1,4 +1,5 @@
 var TIMESCALE = 1/50.;
+var MAX_POPS=70;
 
 var fillCircle = function (ctx, cx, cy, r) {
     ctx.beginPath();
@@ -58,8 +59,8 @@ Color.prototype.mul = function(amount) {
 var Ideology = function(opts) {
     this.opts = {
         color: new Color(0,0,0,1),
-        c: 1.0,
-        t: 1.1,
+        c: 1.3,
+        t: 1.3,
         affinity: 0,
     }
     extend(this.opts, opts);
@@ -74,7 +75,7 @@ var Population = function(sim, x, y, size, ideologies, opts) {
     this.ideologies = ideologies;
   
     this.opts = {
-        error: size/17.
+        error: Math.random() * 10
     }
     extend(this.opts, opts);
 };
@@ -122,14 +123,14 @@ Population.prototype.interact_with = function(other, dt) {
 
         }
 
-        if (comp*(2/distance) < 0.10) {
+        if (comp*(2/distance) < 0.10*sim.attraction) {
             this.x -= (dx/20)*TIMESCALE;
             this.y -= (dy/20)*TIMESCALE;
         }
         
-        if (d1 < (this.size+other.size)/2. ) {
-            this.x += (dx/40)*TIMESCALE;
-            this.y += (dy/40)*TIMESCALE;            
+        if (d1 < (this.size+other.size)*sim.territorialism/2.) {
+            this.x += (dx/20)*TIMESCALE;
+            this.y += (dy/20)*TIMESCALE;            
         }
 
         for (var i in this.ideologies) {
@@ -138,11 +139,10 @@ Population.prototype.interact_with = function(other, dt) {
             var w_delta = Math.abs(this_weight - other_weight) * distance;
             var weight_delta = infection_function(
                 this_weight, 
-                w_delta * other.ideologies[i].ideology.opts.c,
-                w_delta * other.ideologies[i].ideology.opts.t*(1 - distance), 
-                this_weight * other.ideologies[i].ideology.opts.vaccinates[i]);
+                other.ideologies[i].ideology.opts.c*(4*(1/distance)) * sim.communicability,
+                other.ideologies[i].ideology.opts.t * sim.transmissibility, 
+                other.ideologies[i].ideology.opts.vaccinates[i]);
             this.ideologies[i].weight = this_weight + (weight_delta/dt)*TIMESCALE;
-
         }
         this.rebalance_weights();
     }
@@ -208,6 +208,11 @@ var Simulator = function(opts) {
                                  );
         }
     };
+    this.attraction = 1;
+    this.territorialism = 1;
+    this.communicability = 1;
+    this.transmissibility = 1;
+
     extend(this.opts, opts);
     this.interval = undefined;
     this.canvas = document.getElementById(this.opts.canvas);
@@ -278,13 +283,17 @@ Simulator.prototype.redraw = function() {
         this.ctx.fillStyle = p.color().as_rgba();
         fillCircle(this.ctx, p.x, p.y, p.size, p.r, p.g, p.b);
     }
+    if (this.opts.debug) {
+        var debugstr = "";
+        document.getElementById();
+    }
 };
 
 Simulator.prototype.start = function() {
     this.redraw();
 };
 
-MAX_POPS=50;
+
 Simulator.prototype.handle_click = function(e) {
 
     var offX = e.pageX - e.target.offsetLeft;
