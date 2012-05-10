@@ -123,7 +123,7 @@ Population.prototype.interact_with = function(other, dt) {
 
         }
 
-        if (comp*(1/distance) < 0.10) {
+        if (comp*(1/distance)/sim.attraction < 0.10) {
             this.x -= (dx*sim.attraction/20)*TIMESCALE;
             this.y -= (dy*sim.attraction/20)*TIMESCALE;
         }
