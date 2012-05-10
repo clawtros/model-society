@@ -29,7 +29,7 @@ var setPixel = function(imageData, x, y, r, g, b) {
 
 
 var infection_function = function(wt, c, t, a) {
-    return wt * (c * t * (1-wt)+a);
+    return wt * c * t * ((1-wt)+a);
 };
 
 
@@ -139,7 +139,7 @@ Population.prototype.interact_with = function(other, dt) {
             var w_delta = Math.abs(this_weight - other_weight) * distance;
             var weight_delta = infection_function(
                 this_weight, 
-                0.1*other.ideologies[i].ideology.opts.c*(1/distance)* sim.communicability,
+                0.1*other.ideologies[i].ideology.opts.c*(1/distance) * sim.communicability,
                 0.1*other.ideologies[i].ideology.opts.t * sim.transmissibility, 
                 other.ideologies[i].ideology.opts.vaccinates[i]);
             this.ideologies[i].weight = this_weight + (weight_delta/dt)*TIMESCALE;
