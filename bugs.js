@@ -129,14 +129,15 @@ Bug.prototype = {
         
 
     },
-    move: function(){
+    move: function(dt){
         if (this.vel_x > this.max_vel)       {this.vel_x = this.max_vel}
         if (this.vel_x < (this.max_vel * -1)){this.vel_x = (this.max_vel * -1)}
         if (this.vel_y > this.max_vel)       {this.vel_y = this.max_vel}
         if (this.vel_y < (this.max_vel * -1)){this.vel_y = (this.max_vel * -1)}
+        var SPEED = 250;
 
-        this.x = this.x + this.vel_x;
-        this.y = this.y + this.vel_y;
+        this.x = this.x + this.vel_x*(SPEED/dt)*TIMESCALE;
+        this.y = this.y + this.vel_y*(SPEED/dt)*TIMESCALE;
         if (this.x > this.sim.opts.width){ this.x = 0 }        
         if (this.x < 0){ this.x = this.sim.opts.width }        
         if (this.y > this.sim.opts.height){ this.y = 0 }        
@@ -220,9 +221,9 @@ Bug.prototype = {
         sim._remove_bug(this)
     },
 
-    simulate: function(){
+    simulate: function(dt){
         this.get_older();
-        this.move();
+        this.move(dt);
         this.interact();
         this.mood();
         this.reproduce();

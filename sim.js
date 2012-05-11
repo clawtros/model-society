@@ -211,7 +211,7 @@ var Simulator = function(opts) {
                                  );
         }
     };
-    this.attraction = 1;
+    this.attraction = 0.1;
     this.territorialism = 1;
     this.communicability = 1;
     this.transmissibility = 1;
@@ -281,8 +281,8 @@ Simulator.prototype.step = function() {
     }
 
     for (var bug_i in this.bugs) {
-        var bug = this.bugs[bug_i]
-        bug.simulate();
+        var bug = this.bugs[bug_i];
+        bug.simulate(dt);
     }
     document.getElementById('pop').innerHTML = this.bugs.length;
     this.redraw();
