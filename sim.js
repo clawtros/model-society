@@ -224,170 +224,28 @@ var Simulator = function(opts) {
     this.ctx = this.canvas.getContext('2d');
     this.reset();
 
-    this.max_foods          = 100;
-    this.foods              = []
-    this.starting_foods(this, 100);
+    this.max_bugs          = 100;
+    this.bugs              = []
+    this.starting_bugs(this, 100);
 
 };
 
-var Foodstuff = function(sim, x, y){
-    this.sim = sim
-    this.default_lifespan   = 1000;
-    this.spawn_chance       = 1;
-    this.max_vel = 2;
-    this.spawned = false;
-    this.vel_x = 0;
-    this.vel_y = 0;
-    this.x = x; 
-    this.y = y;
-    this.visual_range = 30;
-    this.anger_timeout = 10;
-    this.anger_level = 0
-    this.lifespan;
-    this.age = 0;
-    this.size  = 2;
-    this.init();
-}
-
-Foodstuff.prototype = {
-    init: function(){
-        console.log([this.x, this.y, this.lifespan])
-        this.place();
-        this.random_lifespan();
-        this.random_vel();
-        console.log([this.x, this.y, this.lifespan])
-        // foodstuffs should appear on the map
-        // they will be small green circles, or something.
-    },
-
-    place: function(){
-    
-        var sim_w = this.sim.opts.width;
-        var sim_h = this.sim.opts.height;
-        if (this.x == undefined){
-            this.x = random_within(sim_w);
-        }
-        if (this.y == undefined){
-            this.y = random_within(sim_h);
-        }
 
 
-    },
-
-    random_lifespan: function(){
-        this.lifespan = random_within(this.default_lifespan)
-    },
-
-    random_vel: function(){
-        this.vel_x = (random_within(this.max_vel * 2)) - this.max_vel;
-        this.vel_y = (random_within(this.max_vel * 2)) - this.max_vel;
-    },
-
-    get_older: function(){
-        this.age++;
-        if (this.age > this.lifespan){
-            this.die();
-        }
-    },
-    move: function(){
-        this.x = this.x + this.vel_x;
-        this.y = this.y + this.vel_y;
-        if (this.x > this.sim.opts.width){ this.x = 0 }        
-        if (this.x < 0){ this.x = this.sim.opts.width }        
-        if (this.y > this.sim.opts.height){ this.y = 0 }        
-        if (this.y < 0){ this.y = this.sim.opts.height }        
-        
-    },
-    mood: function(){
-      if (this.anger_level > 0){
-          this.anger_level--
-          this.color = this.angry_color;         
-      } else {
-          this.color = this.base_color();
-      }  
-    },
-    base_color: function(){
-        if (this.spawned === true) {
-            return this.spawn_color;
-        } else {
-            return this.default_color;
-        }
-    },
-    reproduce: function(){
-        // var spawning = random_within(this.spawn_chance)
-        // if ((spawning == 1 )){
-            console.log('i spawned')
-            this.sim._add_food(this.x - 10, this.y - 10);
-            this.random_vel();
-            this.color = this.spawn_color;
-            this.spawned = true;
-        // }
-    }, 
-    die: function(){
-        console.log('i died')
-        sim._remove_food(this)
-    },
-    spawn_color: new Color(30, 30, 0, 1),
-    angry_color: new Color(255, 100, 0, 1),
-    default_color: new Color(0,100,0,1),    
-    color: new Color(255,0,0,1),
-    simulate: function(){
-        this.get_older();
-        this.move();
-        this.interact_with_kin();
-        this.mood();
-        // this.reproduce();
-    },
-
-    interact_with_kin: function(){
-        var self = this;
-        var all_foods = this.sim.foods;
-
-        for (var i = all_foods.length - 1; i >= 0; i--){
-            var other  = all_foods[i]
-            if (other == self) {continue}
-            if (self.can_touch(other)){
-                self.reproduce();
-            }
-            if (self.can_see(other)){
-                this.anger_level = this.anger_timeout;                 
-            }
-            
-        };
-        
-
-    }, 
-    dist_from: function(other){
-        var dx = this.x-other.x;
-        var dy = this.y-other.y;
-        var dist = (Math.sqrt(dx*dx + dy*dy));        
-        return dist
-    },
-    can_touch: function(other){
-        var dist = this.dist_from(other);
-        var touched = ( dist < this.size)
-        return touched;
-    },
-    can_see: function(other){
-        return (this.dist_from(other) < this.visual_range)
-    }
-    
-}
-
-Simulator.prototype.starting_foods = function(sim, n){
+Simulator.prototype.starting_bugs = function(sim, n){
     var i = n
     for (i; i >= 0; i--){
-        this._add_food();
+        this._add_bug();
     };
 }
-Simulator.prototype._add_food = function(x, y){
-    if (this.foods.length > this.max_foods) {return}
-    this.foods.push(new Foodstuff(this, x, y))
+Simulator.prototype._add_bug = function(x, y){
+    if (this.bugs.length > this.max_bugs) {return}
+    this.bugs.push(new Bug(this, x, y))
 }
 
-Simulator.prototype._remove_food = function(food){
-    var index = this.foods.indexOf(food);
-    this.foods.splice(index, 1)
+Simulator.prototype._remove_bug = function(bug){
+    var index = this.bugs.indexOf(bug);
+    this.bugs.splice(index, 1)
 }
 
 Simulator.prototype.animate = function() {
@@ -422,11 +280,11 @@ Simulator.prototype.step = function() {
         sp.simulate(dt)
     }
 
-    for (var food_i in this.foods) {
-        var food = this.foods[food_i]
-        food.simulate();
+    for (var bug_i in this.bugs) {
+        var bug = this.bugs[bug_i]
+        bug.simulate();
     }
-
+    document.getElementById('pop').innerHTML = this.bugs.length;
     this.redraw();
 }
 
@@ -457,10 +315,15 @@ Simulator.prototype.redraw = function() {
         fillCircle(this.ctx, p.x, p.y, p.size, p.r, p.g, p.b);
     }
 
-    for (var food_i in this.foods) {
-        var food = this.foods[food_i]
-        this.ctx.fillStyle = food.color.as_rgba();
-        fillCircle(this.ctx, food.x, food.y, food.size, food.color.r, food.color.g, food.color.b);
+    for (var bug_i in this.bugs) {
+        var bug = this.bugs[bug_i]
+        this.ctx.fillStyle = bug.color.as_rgba();
+        fillCircle(this.ctx, bug.x, bug.y, bug.size, bug.color.r, bug.color.g, bug.color.b);
+        this.ctx.fillStyle = "rgba(0, 10, 10, 0.01);"
+        fillCircle(this.ctx, bug.x, bug.y, bug.visual_range, 0, 255, 0);
+        this.ctx.fillStyle = "rgba(0, 255, 0 , 0.02);"
+        fillCircle(this.ctx, bug.x, bug.y, bug.stink, 0, 255, 0);
+
     }
 
     
