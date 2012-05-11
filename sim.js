@@ -226,18 +226,23 @@ var Simulator = function(opts) {
 
     this.max_foods          = 100;
     this.foods              = []
-    this.starting_foods(this, 10);
+    this.starting_foods(this, 100);
 
 };
 
-var Foodstuff = function(sim){
+var Foodstuff = function(sim, x, y){
     this.sim = sim
-    this.default_lifespan   = 100;
-    this.spawn_chance       = 10;
-    this.vel_x = 1;
-    this.vel_y = 2;
-    this.x; 
-    this.y;
+    this.default_lifespan   = 1000;
+    this.spawn_chance       = 1;
+    this.max_vel = 2;
+    this.spawned = false;
+    this.vel_x = 0;
+    this.vel_y = 0;
+    this.x = x; 
+    this.y = y;
+    this.visual_range = 30;
+    this.anger_timeout = 10;
+    this.anger_level = 0
     this.lifespan;
     this.age = 0;
     this.size  = 2;
@@ -246,6 +251,7 @@ var Foodstuff = function(sim){
 
 Foodstuff.prototype = {
     init: function(){
+        console.log([this.x, this.y, this.lifespan])
         this.place();
         this.random_lifespan();
         this.random_vel();
@@ -255,10 +261,17 @@ Foodstuff.prototype = {
     },
 
     place: function(){
+    
         var sim_w = this.sim.opts.width;
         var sim_h = this.sim.opts.height;
-        this.x = random_within(sim_w);
-        this.y = random_within(sim_h);
+        if (this.x == undefined){
+            this.x = random_within(sim_w);
+        }
+        if (this.y == undefined){
+            this.y = random_within(sim_h);
+        }
+
+
     },
 
     random_lifespan: function(){
@@ -266,9 +279,8 @@ Foodstuff.prototype = {
     },
 
     random_vel: function(){
-        this.vel_x = (random_within(this.vel_x * 2)) - this.vel_x;
-        this.vel_y = (random_within(this.vel_y * 2)) - this.vel_y;
-        console.log([this.vel_x, this.vel_y])
+        this.vel_x = (random_within(this.max_vel * 2)) - this.max_vel;
+        this.vel_y = (random_within(this.max_vel * 2)) - this.max_vel;
     },
 
     get_older: function(){
@@ -280,25 +292,86 @@ Foodstuff.prototype = {
     move: function(){
         this.x = this.x + this.vel_x;
         this.y = this.y + this.vel_y;
+        if (this.x > this.sim.opts.width){ this.x = 0 }        
+        if (this.x < 0){ this.x = this.sim.opts.width }        
+        if (this.y > this.sim.opts.height){ this.y = 0 }        
+        if (this.y < 0){ this.y = this.sim.opts.height }        
+        
+    },
+    mood: function(){
+      if (this.anger_level > 0){
+          this.anger_level--
+          this.color = this.angry_color;         
+      } else {
+          this.color = this.base_color();
+      }  
+    },
+    base_color: function(){
+        if (this.spawned === true) {
+            return this.spawn_color;
+        } else {
+            return this.default_color;
+        }
     },
     reproduce: function(){
-        var spawning = random_within(this.spawn_chance)
-        if ((spawning == 1 )){
+        // var spawning = random_within(this.spawn_chance)
+        // if ((spawning == 1 )){
             console.log('i spawned')
-            this.sim._add_food();
-        }
+            this.sim._add_food(this.x - 10, this.y - 10);
+            this.random_vel();
+            this.color = this.spawn_color;
+            this.spawned = true;
+        // }
     }, 
     die: function(){
         console.log('i died')
         sim._remove_food(this)
     },
-    
-    color: new Color(255,0,0,1),    
+    spawn_color: new Color(30, 30, 0, 1),
+    angry_color: new Color(255, 100, 0, 1),
+    default_color: new Color(0,100,0,1),    
+    color: new Color(255,0,0,1),
     simulate: function(){
         this.get_older();
         this.move();
-        this.reproduce();
+        this.interact_with_kin();
+        this.mood();
+        // this.reproduce();
+    },
+
+    interact_with_kin: function(){
+        var self = this;
+        var all_foods = this.sim.foods;
+
+        for (var i = all_foods.length - 1; i >= 0; i--){
+            var other  = all_foods[i]
+            if (other == self) {continue}
+            if (self.can_touch(other)){
+                self.reproduce();
+            }
+            if (self.can_see(other)){
+                this.anger_level = this.anger_timeout;                 
+            }
+            
+        };
+        
+
+    }, 
+    dist_from: function(other){
+        var dx = this.x-other.x;
+        var dy = this.y-other.y;
+        var dist = (Math.sqrt(dx*dx + dy*dy));        
+        return dist
+    },
+    can_touch: function(other){
+        var dist = this.dist_from(other);
+        var touched = ( dist < this.size)
+        return touched;
+    },
+    can_see: function(other){
+        return (this.dist_from(other) < this.visual_range)
     }
+    
 }
 
 Simulator.prototype.starting_foods = function(sim, n){
@@ -307,9 +380,9 @@ Simulator.prototype.starting_foods = function(sim, n){
         this._add_food();
     };
 }
-Simulator.prototype._add_food = function(){
+Simulator.prototype._add_food = function(x, y){
     if (this.foods.length > this.max_foods) {return}
-    this.foods.push(new Foodstuff(this))
+    this.foods.push(new Foodstuff(this, x, y))
 }
 
 Simulator.prototype._remove_food = function(food){
