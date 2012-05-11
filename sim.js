@@ -18,6 +18,9 @@ var bound = function(n, low, high) {
     return Math.max(low, Math.min(high, n));
 };
 
+var random_within = function(n){
+    return Math.floor(Math.random() * n);
+}
 
 var setPixel = function(imageData, x, y, r, g, b) {
     index = (x + y * imageData.width) * 4;
@@ -220,7 +223,99 @@ var Simulator = function(opts) {
     this.canvas.height = this.opts.height;
     this.ctx = this.canvas.getContext('2d');
     this.reset();
+
+    this.max_foods          = 100;
+    this.foods              = []
+    this.starting_foods(this, 10);
+
 };
+
+var Foodstuff = function(sim){
+    this.sim = sim
+    this.default_lifespan   = 100;
+    this.spawn_chance       = 10;
+    this.vel_x = 1;
+    this.vel_y = 2;
+    this.x; 
+    this.y;
+    this.lifespan;
+    this.age = 0;
+    this.size  = 2;
+    this.init();
+}
+
+Foodstuff.prototype = {
+    init: function(){
+        this.place();
+        this.random_lifespan();
+        this.random_vel();
+        console.log([this.x, this.y, this.lifespan])
+        // foodstuffs should appear on the map
+        // they will be small green circles, or something.
+    },
+
+    place: function(){
+        var sim_w = this.sim.opts.width;
+        var sim_h = this.sim.opts.height;
+        this.x = random_within(sim_w);
+        this.y = random_within(sim_h);
+    },
+
+    random_lifespan: function(){
+        this.lifespan = random_within(this.default_lifespan)
+    },
+
+    random_vel: function(){
+        this.vel_x = (random_within(this.vel_x * 2)) - this.vel_x;
+        this.vel_y = (random_within(this.vel_y * 2)) - this.vel_y;
+        console.log([this.vel_x, this.vel_y])
+    },
+
+    get_older: function(){
+        this.age++;
+        if (this.age > this.lifespan){
+            this.die();
+        }
+    },
+    move: function(){
+        this.x = this.x + this.vel_x;
+        this.y = this.y + this.vel_y;
+    },
+    reproduce: function(){
+        var spawning = random_within(this.spawn_chance)
+        if ((spawning == 1 )){
+            console.log('i spawned')
+            this.sim._add_food();
+        }
+    }, 
+    die: function(){
+        console.log('i died')
+        sim._remove_food(this)
+    },
+    
+    color: new Color(255,0,0,1),    
+    simulate: function(){
+        this.get_older();
+        this.move();
+        this.reproduce();
+    }
+}
+
+Simulator.prototype.starting_foods = function(sim, n){
+    var i = n
+    for (i; i >= 0; i--){
+        this._add_food();
+    };
+}
+Simulator.prototype._add_food = function(){
+    if (this.foods.length > this.max_foods) {return}
+    this.foods.push(new Foodstuff(this))
+}
+
+Simulator.prototype._remove_food = function(food){
+    var index = this.foods.indexOf(food);
+    this.foods.splice(index, 1)
+}
 
 Simulator.prototype.animate = function() {
     if (!this.interval) {
@@ -249,11 +344,16 @@ Simulator.prototype.create_table = function(w,h) {
 
 Simulator.prototype.step = function() {
     var dt = this.opts.speed;
-    for (var s_pop_id in this.state) {
-        
+    for (var s_pop_id in this.state) {        
         var sp = this.state[s_pop_id];
         sp.simulate(dt)
     }
+
+    for (var food_i in this.foods) {
+        var food = this.foods[food_i]
+        food.simulate();
+    }
+
     this.redraw();
 }
 
@@ -283,6 +383,14 @@ Simulator.prototype.redraw = function() {
         this.ctx.fillStyle = p.color().as_rgba();
         fillCircle(this.ctx, p.x, p.y, p.size, p.r, p.g, p.b);
     }
+
+    for (var food_i in this.foods) {
+        var food = this.foods[food_i]
+        this.ctx.fillStyle = food.color.as_rgba();
+        fillCircle(this.ctx, food.x, food.y, food.size, food.color.r, food.color.g, food.color.b);
+    }
+
+    
     if (this.opts.debug) {
         var debugstr = "";
         document.getElementById();
