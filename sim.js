@@ -128,12 +128,14 @@ Population.prototype.interact_with = function(other, dt) {
         var comp = this.compatibility(other);
         var e_comp = this.compatibility(other, this.opts.error(), function(x) {return 1-x;});
 
-        if (e_comp < 0.6) {
+        if (e_comp < 0.59) {
+
             var exodus = Math.random()*this.size*TIMESCALE*distance;
+
             this.size -= exodus;
             other.size += exodus;
 
-        }
+        } 
         var old_color = this.color();
         if (comp*(1/distance)/sim.attraction < 0.10) {
 
@@ -161,10 +163,10 @@ Population.prototype.interact_with = function(other, dt) {
         }
         if (sim.draw_lines) {
             sim.ctx.save();
-            document.getElementById('debug').innerHTML = ds;
-            var new_color = this.color().sub(old_color);
+            document.getElementById('debug').innerHTML = ds/3;
             sim.ctx.strokeStyle = "rgba(0,0,0,0.2)";
             sim.ctx.lineWidth = ds*10;
+            sim.ctx.lineCap = "round";
             sim.ctx.beginPath();
             sim.ctx.moveTo(this.x, this.y);
             sim.ctx.lineTo(other.x, other.y);
