@@ -128,21 +128,23 @@ Population.prototype.interact_with = function(other, dt) {
         var comp = this.compatibility(other);
         var e_comp = this.compatibility(other, this.opts.error(), function(x) {return 1-x;});
 
-        if (e_comp < 0.3 *(Math.random() + 0.5) + sim.communicability) {
-            var exodus = 0.1*Math.random()*this.size*TIMESCALE;
+        if (e_comp < 0.6) {
+            var exodus = Math.random()*this.size*TIMESCALE*distance;
             this.size -= exodus;
             other.size += exodus;
 
         }
         var old_color = this.color();
         if (comp*(1/distance)/sim.attraction < 0.10) {
+
             this.x -= (dx*sim.attraction/20)*TIMESCALE;
             this.y -= (dy*sim.attraction/20)*TIMESCALE;
         }
         
         if (d1 < (this.size+other.size)*sim.territorialism/2.) {
-            this.x += (dx/20)*TIMESCALE;
-            this.y += (dy/20)*TIMESCALE;            
+            var dsize = 1/(this.size/other.size);//Math.abs(this.size-other.size) / Math.max(this.size, other.size);
+            this.x += (dx/20)*TIMESCALE*dsize;
+            this.y += (dy/20)*TIMESCALE*dsize;            
         }
         var ds = 0;
         for (var i in this.ideologies) {
