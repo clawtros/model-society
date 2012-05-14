@@ -58,6 +58,15 @@ Color.prototype.mul = function(amount) {
     return new Color(this.r*amount, this.g*amount, this.b*amount);
 }
 
+Color.prototype.sub = function(that) {
+    return new Color(this.r-that.r, this.g-that.g, this.b-that.b);
+}
+
+
+Color.prototype.add = function(that) {
+    return new Color(this.r+that.r, this.g+that.g, this.b+that.b);
+}
+
 
 var Ideology = function(opts) {
     this.opts = {
@@ -125,7 +134,7 @@ Population.prototype.interact_with = function(other, dt) {
             other.size += exodus;
 
         }
-
+        var old_color = this.color();
         if (comp*(1/distance)/sim.attraction < 0.10) {
             this.x -= (dx*sim.attraction/20)*TIMESCALE;
             this.y -= (dy*sim.attraction/20)*TIMESCALE;
@@ -135,17 +144,31 @@ Population.prototype.interact_with = function(other, dt) {
             this.x += (dx/20)*TIMESCALE;
             this.y += (dy/20)*TIMESCALE;            
         }
-
+        var ds = 0;
         for (var i in this.ideologies) {
             var this_weight = this.ideologies[i].weight;
             var other_weight = other.ideologies[i].weight;
-            var w_delta = Math.abs(this_weight - other_weight) * distance;
+            var w_delta = Math.abs(this_weight - other_weight);
             var weight_delta = infection_function(
                 this_weight, 
                 0.1*other.ideologies[i].ideology.opts.c*(1/distance) * sim.communicability,
                 0.1*other.ideologies[i].ideology.opts.t * sim.transmissibility, 
                 other.ideologies[i].ideology.opts.vaccinates[i]);
             this.ideologies[i].weight = this_weight + (weight_delta/dt)*TIMESCALE;
+            ds += weight_delta;
+        }
+        if (sim.draw_lines) {
+            sim.ctx.save();
+            document.getElementById('debug').innerHTML = ds;
+            var new_color = this.color().sub(old_color);
+            sim.ctx.strokeStyle = "rgba(0,0,0,0.2)";
+            sim.ctx.lineWidth = ds*100;
+            sim.ctx.beginPath();
+            sim.ctx.moveTo(this.x, this.y);
+            sim.ctx.lineTo(other.x, other.y);
+            sim.ctx.stroke();
+            sim.ctx.closePath();
+            sim.ctx.restore();
         }
         this.rebalance_weights();
     }
@@ -169,6 +192,7 @@ Population.prototype.color = function() {
 };
 
 var Simulator = function(opts) {
+    this.draw_lines = true;
     this.opts = {
         width: 100,
         height: 100,
@@ -226,7 +250,7 @@ var Simulator = function(opts) {
 
     this.max_bugs          = 100;
     this.bugs              = []
-    this.starting_bugs(this, 100);
+    this.starting_bugs(this, 0);
 
 };
 
@@ -275,6 +299,8 @@ Simulator.prototype.create_table = function(w,h) {
 
 Simulator.prototype.step = function() {
     var dt = this.opts.speed;
+    this.redraw();
+
     for (var s_pop_id in this.state) {        
         var sp = this.state[s_pop_id];
         sp.simulate(dt)
@@ -285,7 +311,7 @@ Simulator.prototype.step = function() {
         bug.simulate(dt);
     }
     document.getElementById('pop').innerHTML = this.bugs.length;
-    this.redraw();
+
 }
 
 Simulator.prototype.reset = function() {
@@ -308,13 +334,13 @@ Simulator.prototype.background = function() {
 }
 
 Simulator.prototype.redraw = function() {
-    this.ctx.clearRect(0,0,this.opts.width,this.opts.height);
+    this.ctx.fillStyle="rgba(255,255,255,1)";
+    this.ctx.fillRect(0,0,this.opts.width,this.opts.height);
     for (var pop_id in this.state) {
         var p = this.state[pop_id];
         this.ctx.fillStyle = p.color().as_rgba();
         fillCircle(this.ctx, p.x, p.y, p.size, p.r, p.g, p.b);
     }
-
     for (var bug_i in this.bugs) {
         var bug = this.bugs[bug_i]
         this.ctx.fillStyle = bug.color.as_rgba();
@@ -325,12 +351,10 @@ Simulator.prototype.redraw = function() {
         fillCircle(this.ctx, bug.x, bug.y, bug.stink, 0, 255, 0);
 
     }
-
     
     if (this.opts.debug) {
-        var debugstr = "";
-        document.getElementById();
     }
+    
 };
 
 Simulator.prototype.start = function() {
