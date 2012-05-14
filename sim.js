@@ -153,7 +153,7 @@ Population.prototype.interact_with = function(other, dt) {
                 this_weight, 
                 0.1*other.ideologies[i].ideology.opts.c*(1/distance) * sim.communicability,
                 0.1*other.ideologies[i].ideology.opts.t * sim.transmissibility, 
-                other.ideologies[i].ideology.opts.vaccinates[i]);
+                other.ideologies[i].ideology.opts.vaccinates[i]*this_weight*TIMESCALE);
             this.ideologies[i].weight = this_weight + (weight_delta/dt)*TIMESCALE;
             ds += weight_delta;
         }
@@ -202,7 +202,7 @@ var Simulator = function(opts) {
         communication_distance:1,
         default_pop: function(x,y) { 
             var r = Math.random();
-            var r1 = 1 - r * Math.random();
+            var r1 = 1 - r - Math.random();
             var r2 = 1 - r - r1;
             return new Population(this, x, y, 
                                   Math.random() * 100,
